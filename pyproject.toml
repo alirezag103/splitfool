@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "splitfool"
+version = "0.1.0"
+description = "Recording and splitting the expenses' details"
+authors = ["alireza <164399453+alirezag103@users.noreply.github.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+django = "^5.0.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
