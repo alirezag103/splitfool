@@ -1,0 +1,10 @@
+{
+    "01": "Food",
+    "02": "Rent",
+    "03": "Upkeep-Repair",
+    "04": "Medical",
+    "05": "Amusement",
+    "06": "Transport",
+    "07": "Infrastructure",
+    "99": "Other"
+}
