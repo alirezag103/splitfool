@@ -1,10 +1,16 @@
 {
-    "01": "Food",
-    "02": "Rent",
-    "03": "Upkeep-Repair",
-    "04": "Medical",
-    "05": "Amusement",
-    "06": "Transport",
-    "07": "Infrastructure",
+    "01": "General",
+    "02": "Grocery",
+    "03": "Rent",
+    "04": "Repair",
+    "05": "Medical",
+    "06": "Amusement",
+    "07": "Transport",
+    "08": "Delivery",
+    "09": "Internet",
+    "95": "Bribe",
+    "96": "Infrastructure",
+    "97": "Upkeep",
+    "98": "Tax",
     "99": "Other"
 }
