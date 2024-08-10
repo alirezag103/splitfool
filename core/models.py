@@ -10,19 +10,18 @@ from splitfool.settings import BASE_DIR
 class Group(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='own_groups', null=True)
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name='own_groups', null=True, blank=True)
 
 
 class Connection(models.Model):
-    GROUP_TYPE = 'g'
-    PERSONAL_TYPE = 'p'
-    CONNECTION_TYPES = [(GROUP_TYPE, 'Group'), (PERSONAL_TYPE, 'Personal')]
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    connection_type = models.CharField(max_length=1, choices=CONNECTION_TYPES)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='connections')
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='members', null=True)
-    person = models.ForeignKey(User, on_delete=models.CASCADE, related_name='+', null=True)
+    person = models.ForeignKey(User, on_delete=models.CASCADE, related_name='+')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'person'], name='unique_connection')
+        ]
 
 
 class ConnectionInvitation(models.Model):
@@ -38,8 +37,13 @@ class ConnectionInvitation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitations')
     invited = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invited_to')
     status = models.CharField(max_length=1, choices=INVITATION_STATUS, default=PENDING_)
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, null=True, related_name='invite')
+    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, null=True, blank=True, related_name='invite')
 
+
+class Membership(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='memberships')
 
 class Currency(models.Model):
     pass
@@ -59,9 +63,11 @@ class AbstractExpense(models.Model):
         CATEGORY_CHOICES = json.load(categroy_file)
     # with open( BASE_DIR / "core/Currency.json", "r") as currency_file:
         # CURRENCY_CHOICES = json.load(currency_file)
-    CURRENCY_CHOICES = [('01',('Dollar','$')),('02',('Iranian Rial', 'ریال'))]
+    DOLLAR = '01'
+    IRANIAN_RIALS = '02'
+    CURRENCY_CHOICES = [(DOLLAR,'$'),(IRANIAN_RIALS, 'ریال')]
 
-    category = models.CharField(max_length=2, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=2, choices=CATEGORY_CHOICES, null=True)
     title = models.CharField(max_length=100)
     currency = models.CharField(max_length=2, choices=CURRENCY_CHOICES, default='01')
     amount = models.DecimalField(
