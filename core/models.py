@@ -33,11 +33,10 @@ class ConnectionInvitation(models.Model):
         (ACCEPTED_, 'Accepted'),
         (REJECTED_, 'Rejected'),
     ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitations')
-    invited = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invited_to')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invites')
+    invited = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invitations')
     status = models.CharField(max_length=1, choices=INVITATION_STATUS, default=PENDING_)
-    connection = models.OneToOneField(Connection, on_delete=models.CASCADE, null=True, blank=True, related_name='invite')
+    connection = models.OneToOneField(Connection, on_delete=models.PROTECT, null=True, blank=True, related_name='invite')
 
 
 class Membership(models.Model):
@@ -45,8 +44,29 @@ class Membership(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='memberships')
 
-class Currency(models.Model):
-    pass
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['group', 'user'], name='unique_membership')
+        ]
+
+
+class MembershipInvitation(models.Model):
+    PENDING_ = 'p'
+    ACCEPTED_ = 'a'
+    REJECTED_ = 'r'
+    INVITATION_STATUS = [
+        (PENDING_, 'Pending'),
+        (ACCEPTED_, 'Accepted'),
+        (REJECTED_, 'Rejected'),
+    ]
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='invites')
+    invited = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ginvitations')
+    status = models.CharField(max_length=1, choices=INVITATION_STATUS, default=PENDING_)
+    membership = models.OneToOneField(Membership, on_delete=models.PROTECT, null=True, blank=True, related_name='invite')
+
+
+# class Currency(models.Model):
+#     pass
 
 class Event(models.Model):
     title = models.CharField(max_length=100)
