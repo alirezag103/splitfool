@@ -1,6 +1,9 @@
 import json
 import uuid
+
 from django.db import models
+from django.db.models.aggregates import Sum
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from splitfool.settings import BASE_DIR
 
@@ -87,12 +90,13 @@ class AbstractExpense(models.Model):
     IRANIAN_RIALS = '02'
     CURRENCY_CHOICES = [(DOLLAR,'$'),(IRANIAN_RIALS, 'ریال')]
 
-    category = models.CharField(max_length=2, choices=CATEGORY_CHOICES, null=True)
+    category = models.CharField(max_length=2, choices=CATEGORY_CHOICES, blank=True, null=True)
     title = models.CharField(max_length=100)
     currency = models.CharField(max_length=2, choices=CURRENCY_CHOICES, default='01')
     amount = models.DecimalField(
         max_digits=14,
-        decimal_places=2
+        decimal_places=2,
+        default=0
     )
 
     class Meta:
@@ -100,11 +104,25 @@ class AbstractExpense(models.Model):
 
 
 class Expense(AbstractExpense):
-    pass
+
+    def calculate_amount(self):
+        try:
+            sub_expenses = SubExpense.objects.filter(parent_expense__id=self.id).aggregate(sub_total=Sum('amount'))
+            if sub_expenses['sub_total'] != None:
+                self.amount = sub_expenses['sub_total']
+            print(sub_expenses)
+        except ObjectDoesNotExist:
+            print('ERROR: DoesNotExist')
+            return 'Error occured'
+
+    def save(self, **kwargs):
+        self.calculate_amount()
+        super().save(**kwargs)
+        return 'saved'
 
 
 class SubExpense(AbstractExpense):
-    parent_expense = models.ForeignKey(Expense, on_delete=models.CASCADE, null=True, related_name='subexpenses')
-    parent_event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, related_name='subexpenses')
+    parent_expense = models.ForeignKey(Expense, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
+    parent_event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
 
 
