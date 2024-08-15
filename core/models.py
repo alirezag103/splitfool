@@ -3,7 +3,7 @@ import uuid
 
 from django.db import models
 from django.db.models.aggregates import Sum
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, BadRequest
 from django.contrib.auth.models import User
 from splitfool.settings import BASE_DIR
 
@@ -99,6 +99,9 @@ class AbstractExpense(models.Model):
         default=0
     )
 
+    def __str__(self) -> str:
+        return self.title
+
     class Meta:
         abstract = True
 
@@ -112,17 +115,48 @@ class Expense(AbstractExpense):
                 self.amount = sub_expenses['sub_total']
             print(sub_expenses)
         except ObjectDoesNotExist:
-            print('ERROR: DoesNotExist')
-            return 'Error occured'
+            return "Sub Expense does not exist"
 
     def save(self, **kwargs):
         self.calculate_amount()
         super().save(**kwargs)
-        return 'saved'
 
 
 class SubExpense(AbstractExpense):
     parent_expense = models.ForeignKey(Expense, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
     parent_event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
+
+    def save(self, **kwargs):
+        save_error = None
+        save_message = f"Sub Expensed saved: {self.title}"
+        if self.id:
+            try:
+                parent = Expense.objects.get(subexpenses=self.pk)
+                # print('parent_expense')
+                parent.save()
+                super().save(**kwargs)
+            except ObjectDoesNotExist:
+                save_message = "No Parent Expense found\n"
+                try:
+                    parent = Event.objects.get(subexpenses=self.pk)
+                    # print('parent_event')
+                    parent.save()
+                    super().save(**kwargs)
+                except ObjectDoesNotExist:
+                    save_message += "No Parent Event found\n"
+                    save_error = f"Invalid SubExpense: {str(self)} , SubExpnese.id = {self.id}\n"
+                    raise BadRequest(save_error + save_message)
+            finally:
+                print(save_message, f"self.id is: {self.id}")
+                # super().save(**kwargs)
+        elif (self.parent_expense == None and self.parent_event == None):
+            save_error = f"Invalid SubExpense: {str(self)} , SubExpnese.id = {self.id}\n"
+            save_message = f"No Parent Expense or Parent Event is selected"
+            raise BadRequest(save_error + save_message)
+        else:
+            # print(self.parent_event, self.parent_expense)
+            super().save(**kwargs)
+
+            
 
 
