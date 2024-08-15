@@ -8,5 +8,13 @@ class GroupAdmin(admin.ModelAdmin):
     pass
 
 @admin.register(models.Connection)
-class GroupAdmin(admin.ModelAdmin):
+class ConnectionAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(models.SubExpense)
+class SebExpenseAdmin(admin.ModelAdmin):
     pass
