@@ -18,12 +18,12 @@ class Group(models.Model):
 
 class Connection(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='connections')
-    person = models.ForeignKey(User, on_delete=models.CASCADE, related_name='+')
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='connections1')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='connections2')
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['user', 'person'], name='unique_connection')
+            models.UniqueConstraint(fields=['user1', 'user2'], name='unique_connection')
         ]
 
 
@@ -98,6 +98,15 @@ class AbstractExpense(models.Model):
         decimal_places=2,
         default=0
     )
+    CONNECTION = 'c'
+    GROUP = 'g'
+    EXPENSE_TYPES = [
+        (CONNECTION, 'Connection'),
+        (GROUP, 'Group')
+    ]
+    expense_type = models.CharField(max_length=1, choices=EXPENSE_TYPES)
+    connection = models.ForeignKey(Connection, on_delete=models.CASCADE, related_name='expenses')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='expnses')
 
     def __str__(self) -> str:
         return self.title
@@ -123,6 +132,9 @@ class Expense(AbstractExpense):
 
 
 class SubExpense(AbstractExpense):
+    expense_type = None
+    connection = None
+    group = None
     parent_expense = models.ForeignKey(Expense, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
     parent_event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='subexpenses')
 
@@ -149,7 +161,7 @@ class SubExpense(AbstractExpense):
             finally:
                 print(save_message, f"self.id is: {self.id}")
                 # super().save(**kwargs)
-        elif (self.parent_expense == None and self.parent_event == None):
+        elif (self.parent_expense is None and self.parent_event is None):
             save_error = f"Invalid SubExpense: {str(self)} , SubExpnese.id = {self.id}\n"
             save_message = f"No Parent Expense or Parent Event is selected"
             raise BadRequest(save_error + save_message)
