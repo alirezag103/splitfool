@@ -81,6 +81,16 @@ class Event(models.Model):
     )
 
 
+class EventAttendance(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='attendees')
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='events')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['event', 'user'], name='unique_Attendance')
+        ]
+
+
 class AbstractExpense(models.Model):
     with open( BASE_DIR / "core/ExpenseCategory.json", "r") as categroy_file:
         CATEGORY_CHOICES = json.load(categroy_file)
@@ -168,7 +178,3 @@ class SubExpense(AbstractExpense):
         else:
             # print(self.parent_event, self.parent_expense)
             super().save(**kwargs)
-
-            
-
-
